@@ -1,0 +1,81 @@
+!pip install waybackpy
+import time
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+from waybackpy import WaybackMachineCDXServerAPI
+from IPython.display import display
+
+# List of websites to scrape
+websites = [
+    "https://carta.com/",
+    "https://ledgy.com/"
+]
+
+# User-Agent header to mimic a real browser request
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+}
+
+# Store results in a list
+data = []
+
+for site in websites:
+    print(f"\nFetching the most recent snapshot for: {site}")
+
+    try:
+        # Initialize the Wayback Machine API
+        cdx_api = WaybackMachineCDXServerAPI(site)
+
+        # Get the most recent snapshot
+        snapshot = cdx_api.newest().archive_url
+
+        print(f"Found snapshot: {snapshot}")
+
+        # Scrape the archived page
+        print(f"\nScraping: {snapshot}")
+        response = requests.get(snapshot, headers=headers, timeout=10)
+        response.raise_for_status()  # Raise an error for failed requests
+
+        # Parse the HTML
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        # Extract Title
+        title = soup.title.text.strip() if soup.title else "No Title"
+
+        # Extract H1
+        h1 = soup.find("h1")
+        h1_text = h1.text.strip() if h1 else "No H1 Found"
+
+        # Extract first <p> after H1
+        first_p = h1.find_next("p").text.strip() if h1 and h1.find_next("p") else "No Paragraph Found"
+
+        # Extract all H2s (joined as a string for table readability)
+        h2_tags = [h2.text.strip() for h2 in soup.find_all("h2")]
+        h2_text = ", ".join(h2_tags) if h2_tags else "No H2s Found"
+
+        # Append data to list
+        data.append([site, snapshot, title, h1_text, first_p, h2_text])
+
+        # Delay to avoid rate limiting
+        time.sleep(2)
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error scraping {snapshot}: {e}")
+    except Exception as e:
+        print(f"An error occurred while processing {site}: {e}")
+
+# Create a DataFrame
+df = pd.DataFrame(data, columns=["Website", "Snapshot URL", "Title", "H1", "First Paragraph", "H2s"])
+
+# Display table in Colab with styling
+styled_df = df.style.set_properties(**{'text-align': 'left'}).set_table_styles([
+    {'selector': 'th', 'props': [('background-color', '#2a7cba'), ('color', 'white'), ('font-weight', 'bold'), ('text-align', 'left')]},
+    {'selector': 'td', 'props': [('padding', '8px')]}
+])
+
+display(styled_df)
+
+# Save to CSV for later use
+df.to_csv("wayback_scraped_data.csv", index=False)
+print("\nData saved to 'wayback_scraped_data.csv'")
