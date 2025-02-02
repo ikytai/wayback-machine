@@ -2,7 +2,7 @@ name: Weekly Wayback Scraper
 
 on:
   schedule:
-    - cron: '54 17 * * 0'  # Runs every Sunday at 16:05 UTC
+    - cron: '18 18 * * 0'  # Runs every Sunday at 18:18 UTC
 
 jobs:
   build:
