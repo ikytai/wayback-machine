@@ -1,21 +1,15 @@
-!pip install waybackpy
+import os
 import time
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 from waybackpy import WaybackMachineCDXServerAPI
-from IPython.display import display
 
 # List of websites to scrape
 websites = [
     "https://carta.com/",
     "https://ledgy.com/"
 ]
-
-# User-Agent header to mimic a real browser request
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-}
 
 # Store results in a list
 data = []
@@ -34,7 +28,7 @@ for site in websites:
 
         # Scrape the archived page
         print(f"\nScraping: {snapshot}")
-        response = requests.get(snapshot, headers=headers, timeout=10)
+        response = requests.get(snapshot, timeout=10)
         response.raise_for_status()  # Raise an error for failed requests
 
         # Parse the HTML
@@ -65,17 +59,13 @@ for site in websites:
     except Exception as e:
         print(f"An error occurred while processing {site}: {e}")
 
+# Create the 'wayback_results' directory if it doesn't exist
+os.makedirs("wayback_results", exist_ok=True)
+
 # Create a DataFrame
 df = pd.DataFrame(data, columns=["Website", "Snapshot URL", "Title", "H1", "First Paragraph", "H2s"])
 
-# Display table in Colab with styling
-styled_df = df.style.set_properties(**{'text-align': 'left'}).set_table_styles([
-    {'selector': 'th', 'props': [('background-color', '#2a7cba'), ('color', 'white'), ('font-weight', 'bold'), ('text-align', 'left')]},
-    {'selector': 'td', 'props': [('padding', '8px')]}
-])
-
-display(styled_df)
-
-# Save to CSV for later use
-df.to_csv("wayback_scraped_data.csv", index=False)
-print("\nData saved to 'wayback_scraped_data.csv'")
+# Save to CSV in the 'wayback_results' directory
+csv_path = os.path.join("wayback_results", "wayback_scraped_data.csv")
+df.to_csv(csv_path, index=False)
+print(f"\nData saved to '{csv_path}'")
