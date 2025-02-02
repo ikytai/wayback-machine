@@ -19,7 +19,7 @@ jobs:
 
       - name: Run the script
         run: |
-          python your_script.py
+          python wayback.py
 
       - name: Commit and push results
         run: |
