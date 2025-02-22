@@ -65,7 +65,10 @@ os.makedirs("wayback_results", exist_ok=True)
 # Create a DataFrame
 df = pd.DataFrame(data, columns=["Website", "Snapshot URL", "Title", "H1", "First Paragraph", "H2s"])
 
-# Save to CSV in the 'wayback_results' directory
-csv_path = os.path.join("wayback_results", "wayback_scraped_data.csv")
+# Generate a timestamp for unique filenames
+timestamp = time.strftime("%Y-%m-%d")
+
+# Save to CSV with timestamp in filename
+csv_path = os.path.join("wayback_results", f"wayback_scraped_data_{timestamp}.csv")
 df.to_csv(csv_path, index=False)
 print(f"\nData saved to '{csv_path}'")
