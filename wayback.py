@@ -3,7 +3,7 @@ import time
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
-from waybackpy import WaybackMachineCDXServerAPI
+from waybackpy import WaybackMachineCDXServerAPI, WaybackError
 
 # List of websites to scrape
 websites = [
@@ -21,14 +21,18 @@ for site in websites:
         # Initialize the Wayback Machine API
         cdx_api = WaybackMachineCDXServerAPI(site)
 
-        # Get the most recent snapshot
-        snapshot = cdx_api.newest().archive_url
-
-        print(f"Found snapshot: {snapshot}")
+        # Attempt to get the most recent snapshot
+        try:
+            snapshot = cdx_api.newest()
+            snapshot_url = snapshot.archive_url
+            print(f"Found snapshot: {snapshot_url}")
+        except WaybackError:
+            print(f"No snapshots found for {site}.")
+            continue
 
         # Scrape the archived page
-        print(f"\nScraping: {snapshot}")
-        response = requests.get(snapshot, timeout=10)
+        print(f"\nScraping: {snapshot_url}")
+        response = requests.get(snapshot_url, timeout=10)
         response.raise_for_status()  # Raise an error for failed requests
 
         # Parse the HTML
@@ -49,13 +53,13 @@ for site in websites:
         h2_text = ", ".join(h2_tags) if h2_tags else "No H2s Found"
 
         # Append data to list
-        data.append([site, snapshot, title, h1_text, first_p, h2_text])
+        data.append([site, snapshot_url, title, h1_text, first_p, h2_text])
 
         # Delay to avoid rate limiting
         time.sleep(2)
 
     except requests.exceptions.RequestException as e:
-        print(f"Error scraping {snapshot}: {e}")
+        print(f"Error scraping {site}: {e}")
     except Exception as e:
         print(f"An error occurred while processing {site}: {e}")
 
@@ -66,7 +70,7 @@ os.makedirs("wayback_results", exist_ok=True)
 df = pd.DataFrame(data, columns=["Website", "Snapshot URL", "Title", "H1", "First Paragraph", "H2s"])
 
 # Generate a timestamp for unique filenames
-timestamp = time.strftime("%Y-%d-%m")
+timestamp = time.strftime("%Y-%m-%d")
 
 # Save to CSV with timestamp in filename
 csv_path = os.path.join("wayback_results", f"wayback_scraped_data_{timestamp}.csv")
