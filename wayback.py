@@ -3,7 +3,7 @@ import time
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
-from waybackpy import WaybackMachineCDXServerAPI, WaybackError
+from waybackpy import WaybackMachineCDXServerAPI
 
 # List of websites to scrape
 websites = [
@@ -26,8 +26,8 @@ for site in websites:
             snapshot = cdx_api.newest()
             snapshot_url = snapshot.archive_url
             print(f"Found snapshot: {snapshot_url}")
-        except WaybackError:
-            print(f"No snapshots found for {site}.")
+        except Exception as e:
+            print(f"No snapshots found for {site}. Error: {e}")
             continue
 
         # Scrape the archived page
